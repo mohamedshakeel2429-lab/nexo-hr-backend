@@ -31,8 +31,8 @@ app.use(helmet({
 }));
 
 const allowedOrigins = [
-  'https://www.nexohsolutions.com',
-  'https://nexohsolutions.com',
+  'https://www.nexohrsolutions.com',
+  'https://nexohrsolutions.com',
   'https://nexo-hr-frontend.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
