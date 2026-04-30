@@ -31,8 +31,10 @@ app.use(helmet({
 }));
 
 const allowedOrigins = [
+  'https://www.nexohsolutions.com',
+  'https://nexohsolutions.com',
   'https://nexo-hr-frontend.vercel.app',
-  'http://localhost:5173', // Vite dev server
+  'http://localhost:5173',
   'http://localhost:3000',
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()) : []),
 ];
@@ -41,7 +43,8 @@ const corsOptions = {
   origin: (origin, cb) => {
     // Allow server-to-server requests (no origin) and listed origins
     if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    logger.warn(`CORS: blocked origin ${origin}`);
+    cb(null, false); // reject without throwing — prevents 500 errors
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
