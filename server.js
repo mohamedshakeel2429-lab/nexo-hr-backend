@@ -30,19 +30,27 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
-  .split(',')
-  .map((o) => o.trim());
+const allowedOrigins = [
+  'https://nexo-hr-frontend.vercel.app',
+  'http://localhost:5173', // Vite dev server
+  'http://localhost:3000',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()) : []),
+];
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, cb) => {
+    // Allow server-to-server requests (no origin) and listed origins
     if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+
+// Handle preflight requests for all routes before any other middleware
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 
 app.use(compression());
 
