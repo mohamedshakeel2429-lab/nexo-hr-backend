@@ -1,21 +1,23 @@
-const { getTransporter } = require('../config/email');
+const { getResendClient } = require('../config/email');
 const logger = require('../utils/logger');
 
-const FROM = `"${process.env.FROM_NAME || 'NEXO HR Solutions'}" <${process.env.FROM_EMAIL || 'nexo.hrsolutions@gmail.com'}>`;
+const FROM = process.env.FROM_EMAIL
+  ? `${process.env.FROM_NAME || 'NEXO HR Solutions'} <${process.env.FROM_EMAIL}>`
+  : 'NEXO HR Solutions <onboarding@resend.dev>';
+
 const NOTIFY_TO = process.env.NOTIFY_EMAIL || 'nexo.hrsolutions@gmail.com';
 
-const sendMail = async (options) => {
-  try {
-    const info = await getTransporter().sendMail({
-      from: FROM,
-      ...options,
-    });
-    logger.info(`Email sent: ${info.messageId} → ${options.to}`);
-    return info;
-  } catch (err) {
-    logger.error(`Email failed to ${options.to}: ${err.message}`);
-    throw err;
+const sendMail = async ({ to, subject, html }) => {
+  const resend = getResendClient();
+  const { data, error } = await resend.emails.send({ from: FROM, to, subject, html });
+
+  if (error) {
+    logger.error(`Resend failed to ${to}: ${error.message}`);
+    throw new Error(error.message);
   }
+
+  logger.info(`Email sent: ${data.id} → ${to}`);
+  return data;
 };
 
 const sendContactConfirmation = async ({ name, email, company, services }) => {
@@ -28,7 +30,7 @@ const sendContactConfirmation = async ({ name, email, company, services }) => {
         <h2 style="color:#6366f1">NEXO HR Solutions</h2>
         <p>Hi <strong>${name}</strong>,</p>
         <p>Thank you for reaching out! We have received your enquiry regarding <strong>${serviceList}</strong>.</p>
-        <p>One of our HR experts from ${company ? 'our team' : 'NEXO'} will get back to you within <strong>4 working hours</strong>.</p>
+        <p>One of our HR experts${company ? ` will review your request for <strong>${company}</strong> and` : ' will'} get back to you within <strong>4 working hours</strong>.</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
         <p style="color:#6b7280;font-size:13px">NEXO HR Solutions · Chennai, India · +91 7200721109</p>
       </div>
@@ -67,7 +69,7 @@ const sendApplicationConfirmation = async ({ name, email, jobTitle }) => {
         <p>Hi <strong>${name}</strong>,</p>
         <p>Thank you for applying for the <strong>${jobTitle}</strong> position. Your application has been successfully received.</p>
         <p>Our recruitment team will review your profile and get back to you within <strong>48 hours</strong>.</p>
-        <p>If you have any questions, feel free to reply to this email or contact us at <a href="mailto:nexo.hrsolutions@gmail.com">nexo.hrsolutions@gmail.com</a>.</p>
+        <p>If you have any questions, feel free to contact us at <a href="mailto:nexo.hrsolutions@gmail.com">nexo.hrsolutions@gmail.com</a>.</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
         <p style="color:#6b7280;font-size:13px">NEXO HR Solutions · Chennai, India · +91 7200721109</p>
       </div>
@@ -107,7 +109,7 @@ const sendPasswordResetEmail = async ({ email, name, resetUrl }) => {
         <div style="text-align:center;margin:32px 0">
           <a href="${resetUrl}" style="background:#6366f1;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold">Reset Password</a>
         </div>
-        <p style="color:#6b7280;font-size:13px">This link expires in 15 minutes. If you did not request a password reset, please ignore this email.</p>
+        <p style="color:#6b7280;font-size:13px">This link expires in 15 minutes. If you did not request this, please ignore this email.</p>
       </div>
     `,
   });

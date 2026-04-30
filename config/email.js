@@ -1,32 +1,23 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const logger = require('../utils/logger');
 
-let transporter;
+let client;
 
-const getTransporter = () => {
-  if (transporter) return transporter;
-
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    secure: process.env.SMTP_PORT === '465',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
-  });
-
-  return transporter;
-};
-
-const verifyEmailConnection = async () => {
-  try {
-    await getTransporter().verify();
-    logger.info('Email SMTP connection verified');
-  } catch (err) {
-    logger.warn(`Email SMTP verification failed: ${err.message}`);
+const getResendClient = () => {
+  if (client) return client;
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY environment variable is not set');
   }
+  client = new Resend(process.env.RESEND_API_KEY);
+  return client;
 };
 
-module.exports = { getTransporter, verifyEmailConnection };
+const verifyEmailConnection = () => {
+  if (!process.env.RESEND_API_KEY) {
+    logger.warn('RESEND_API_KEY is not set — emails will not be sent');
+    return;
+  }
+  logger.info('Resend email client ready');
+};
+
+module.exports = { getResendClient, verifyEmailConnection };
