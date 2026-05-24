@@ -1,0 +1,170 @@
+const { getResendClient } = require('../config/email');
+const logger = require('../utils/logger');
+
+const FROM = process.env.FROM_EMAIL
+  ? `${process.env.FROM_NAME || 'NEXO HR Solutions'} <${process.env.FROM_EMAIL}>`
+  : 'NEXO HR Solutions <onboarding@resend.dev>';
+
+const NOTIFY_TO = process.env.NOTIFY_EMAIL || 'nexo.hrsolutions@gmail.com';
+
+const sendMail = async ({ to, subject, html }) => {
+  const resend = getResendClient();
+  const { data, error } = await resend.emails.send({ from: FROM, to, subject, html });
+
+  if (error) {
+    logger.error(`Resend failed to ${to}: ${error.message}`);
+    throw new Error(error.message);
+  }
+
+  logger.info(`Email sent: ${data.id} → ${to}`);
+  return data;
+};
+
+const sendContactConfirmation = async ({ name, email, company, services }) => {
+  const serviceList = services?.length ? services.join(', ') : 'General Inquiry';
+  await sendMail({
+    to: email,
+    subject: 'We received your enquiry – NEXO HR Solutions',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <h2 style="color:#6366f1">NEXO HR Solutions</h2>
+        <p>Hi <strong>${name}</strong>,</p>
+        <p>Thank you for reaching out! We have received your enquiry regarding <strong>${serviceList}</strong>.</p>
+        <p>One of our HR experts${company ? ` will review your request for <strong>${company}</strong> and` : ' will'} get back to you within <strong>4 working hours</strong>.</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
+        <p style="color:#6b7280;font-size:13px">NEXO HR Solutions · Chennai, India · +91 7200721109</p>
+      </div>
+    `,
+  });
+};
+
+const sendContactNotification = async ({ name, email, company, phone, services, message }) => {
+  const serviceList = services?.length ? services.join(', ') : 'None selected';
+  await sendMail({
+    to: NOTIFY_TO,
+    subject: `[New Enquiry] ${name} – ${company}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <h2 style="color:#6366f1">New Consultation Request</h2>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:8px;font-weight:bold;width:140px">Name</td><td>${name}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Company</td><td>${company}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Email</td><td>${email}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Phone</td><td>${phone}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Services</td><td>${serviceList}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Message</td><td>${message || '—'}</td></tr>
+        </table>
+      </div>
+    `,
+  });
+};
+
+const sendApplicationConfirmation = async ({ name, email, jobTitle }) => {
+  await sendMail({
+    to: email,
+    subject: `Application Received: ${jobTitle} – NEXO HR Solutions`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <h2 style="color:#6366f1">NEXO HR Solutions</h2>
+        <p>Hi <strong>${name}</strong>,</p>
+        <p>Thank you for applying for the <strong>${jobTitle}</strong> position. Your application has been successfully received.</p>
+        <p>Our recruitment team will review your profile and get back to you within <strong>48 hours</strong>.</p>
+        <p>If you have any questions, feel free to contact us at <a href="mailto:nexo.hrsolutions@gmail.com">nexo.hrsolutions@gmail.com</a>.</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
+        <p style="color:#6b7280;font-size:13px">NEXO HR Solutions · Chennai, India · +91 7200721109</p>
+      </div>
+    `,
+  });
+};
+
+const sendApplicationNotification = async ({ name, email, phone, experience, jobTitle, resumeUrl }) => {
+  await sendMail({
+    to: NOTIFY_TO,
+    subject: `[New Application] ${name} → ${jobTitle}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <h2 style="color:#6366f1">New Job Application</h2>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:8px;font-weight:bold;width:140px">Position</td><td>${jobTitle}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Applicant</td><td>${name}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Email</td><td>${email}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Phone</td><td>${phone}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Experience</td><td>${experience} year(s)</td></tr>
+          ${resumeUrl ? `<tr><td style="padding:8px;font-weight:bold">Resume</td><td><a href="${resumeUrl}">Download Resume</a></td></tr>` : ''}
+        </table>
+      </div>
+    `,
+  });
+};
+
+const sendPasswordResetEmail = async ({ email, name, resetUrl }) => {
+  await sendMail({
+    to: email,
+    subject: 'Password Reset Request – NEXO HR Admin',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <h2 style="color:#6366f1">Password Reset</h2>
+        <p>Hi <strong>${name}</strong>,</p>
+        <p>We received a request to reset your admin password. Click the button below to set a new password:</p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${resetUrl}" style="background:#6366f1;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold">Reset Password</a>
+        </div>
+        <p style="color:#6b7280;font-size:13px">This link expires in 15 minutes. If you did not request this, please ignore this email.</p>
+      </div>
+    `,
+  });
+};
+
+const sendCareerProfileConfirmation = async ({ fullName, email, preferredRole }) => {
+  await sendMail({
+    to: email,
+    subject: 'Profile Received – NEXO HR Solutions Talent Network',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <h2 style="color:#6366f1">NEXO HR Solutions</h2>
+        <p>Hi <strong>${fullName}</strong>,</p>
+        <p>Thank you for submitting your profile to NEXO HR Solutions! We have successfully received your details.</p>
+        <p>Your profile is now part of our talent network. We will review your information and get in touch with you when a suitable opportunity for a <strong>${preferredRole}</strong> role matches your experience and skills.</p>
+        <p>In the meantime, you can:</p>
+        <ul style="color:#4b5563;line-height:1.8">
+          <li>Keep an eye on our <a href="https://www.nexohrsolutions.com/careers" style="color:#6366f1;text-decoration:none">Careers page</a> for open positions</li>
+          <li>Update your profile by reaching out to us at <a href="mailto:nexo.hrsolutions@gmail.com" style="color:#6366f1;text-decoration:none">nexo.hrsolutions@gmail.com</a></li>
+          <li>Follow us on LinkedIn for the latest updates</li>
+        </ul>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
+        <p style="color:#6b7280;font-size:13px">NEXO HR Solutions · Chennai, India · +91 7200721109</p>
+      </div>
+    `,
+  });
+};
+
+const sendCareerProfileNotification = async ({ fullName, email, phone, preferredRole, skills, location }) => {
+  const skillsList = [skills.skill1, skills.skill2, skills.skill3].filter(Boolean).join(', ');
+  await sendMail({
+    to: NOTIFY_TO,
+    subject: `[New Talent Profile] ${fullName} – ${preferredRole}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <h2 style="color:#6366f1">New Talent Profile Submission</h2>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:8px;font-weight:bold;width:140px">Name</td><td>${fullName}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Email</td><td>${email}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Phone</td><td>${phone}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Preferred Role</td><td>${preferredRole}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Location</td><td>${location}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold">Skills</td><td>${skillsList}</td></tr>
+        </table>
+      </div>
+    `,
+  });
+};
+
+module.exports = {
+  sendContactConfirmation,
+  sendContactNotification,
+  sendApplicationConfirmation,
+  sendApplicationNotification,
+  sendPasswordResetEmail,
+  sendCareerProfileConfirmation,
+  sendCareerProfileNotification,
+};
