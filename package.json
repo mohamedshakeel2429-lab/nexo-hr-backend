@@ -15,7 +15,11 @@
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+<<<<<<< HEAD
     "dotenv": "^16.6.1",
+=======
+    "dotenv": "^16.4.5",
+>>>>>>> b0fd75f9e40ec998ec13d4ce02ac3f62550a3418
     "express": "^4.21.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.4.1",

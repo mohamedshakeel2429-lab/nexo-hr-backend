@@ -20,7 +20,10 @@ const applicationRoutes = require('./routes/application.routes');
 const contactRoutes = require('./routes/contact.routes');
 const contentRoutes = require('./routes/content.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+<<<<<<< HEAD
 const careerRoutes = require('./routes/career.routes');
+=======
+>>>>>>> b0fd75f9e40ec998ec13d4ce02ac3f62550a3418
 
 const app = express();
 
@@ -112,7 +115,10 @@ app.use('/api', applicationRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+<<<<<<< HEAD
 app.use('/api/careers', careerRoutes);
+=======
+>>>>>>> b0fd75f9e40ec998ec13d4ce02ac3f62550a3418
 
 // ── 404 & Global Error Handler ──────────────────────────────────────
 app.use(notFound);

@@ -115,6 +115,7 @@ const sendPasswordResetEmail = async ({ email, name, resetUrl }) => {
   });
 };
 
+<<<<<<< HEAD
 const sendCareerProfileConfirmation = async ({ fullName, email, preferredRole }) => {
   await sendMail({
     to: email,
@@ -159,12 +160,17 @@ const sendCareerProfileNotification = async ({ fullName, email, phone, preferred
   });
 };
 
+=======
+>>>>>>> b0fd75f9e40ec998ec13d4ce02ac3f62550a3418
 module.exports = {
   sendContactConfirmation,
   sendContactNotification,
   sendApplicationConfirmation,
   sendApplicationNotification,
   sendPasswordResetEmail,
+<<<<<<< HEAD
   sendCareerProfileConfirmation,
   sendCareerProfileNotification,
+=======
+>>>>>>> b0fd75f9e40ec998ec13d4ce02ac3f62550a3418
 };
