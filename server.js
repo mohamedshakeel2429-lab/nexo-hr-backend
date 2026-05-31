@@ -42,20 +42,17 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, cb) => {
-    // Allow server-to-server requests (no origin) and listed origins
     if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
     logger.warn(`CORS: blocked origin ${origin}`);
-    cb(null, false); // reject without throwing — prevents 500 errors
+    cb(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
-// Handle preflight requests for all routes before any other middleware
 app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
-
 app.use(compression());
 
 // ── Body parsing ───────────────────────────────────────────────────
@@ -64,15 +61,18 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // ── Input sanitization ─────────────────────────────────────────────
-try {
-  const mongoSanitize = require('express-mongo-sanitize');
-  app.use(mongoSanitize());
-} catch (_) {}
+const mongoSanitize = require('express-mongo-sanitize');
+app.use(mongoSanitize({ replaceWith: '_' }));
 
-try {
-  const xss = require('xss-clean');
-  app.use(xss());
-} catch (_) {}
+const xss = require('xss');
+app.use((req, res, next) => {
+  if (req.body) {
+    try {
+      req.body = JSON.parse(xss.filterXSS(JSON.stringify(req.body)));
+    } catch (_) {}
+  }
+  next();
+});
 
 // ── Logging ────────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'test') {
@@ -84,10 +84,21 @@ if (process.env.NODE_ENV !== 'test') {
 // ── Rate limiting ──────────────────────────────────────────────────
 app.use('/api', globalLimiter);
 
-// ── Static file serving (local resume uploads) ─────────────────────
-app.use(
-  '/uploads',
-  express.static(path.join(__dirname, 'uploads'), { maxAge: '1d' })
+// ── Secure static file serving (Authenticated Only) ────────────────
+const { protect, restrictTo } = require('./middleware/auth.middleware');
+app.get(
+  '/uploads/resumes/:filename',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  (req, res) => {
+    const safeFilename = path.basename(req.params.filename);
+    const filepath = path.join(__dirname, 'uploads/resumes', safeFilename);
+    res.sendFile(filepath, (err) => {
+      if (err) {
+        res.status(404).json({ success: false, message: 'File not found' });
+      }
+    });
+  }
 );
 
 // ── Root & Health check ────────────────────────────────────────────
@@ -101,7 +112,6 @@ app.get('/api/health', (_req, res) => {
     message: 'NEXO HR API is healthy',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV,
   });
 });
 

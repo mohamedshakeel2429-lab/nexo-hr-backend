@@ -152,3 +152,9 @@ exports.getApplicationStats = asyncHandler(async (req, res) => {
 
   ApiResponse.ok(res, { total, totalToday, statusBreakdown, jobBreakdown });
 });
+
+exports.deleteApplication = asyncHandler(async (req, res) => {
+  const application = await Application.findByIdAndDelete(req.params.id);
+  if (!application) throw ApiError.notFound('Application not found');
+  ApiResponse.ok(res, null, 'Application deleted successfully');
+});

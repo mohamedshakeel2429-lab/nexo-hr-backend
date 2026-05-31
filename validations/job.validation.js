@@ -32,7 +32,7 @@ const updateJobValidation = [
 
 const listJobsValidation = [
   query('page').optional().isInt({ min: 1 }).toInt(),
-  query('limit').optional().isInt({ min: 1, max: 50 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 200 }).toInt(),
   query('status').optional().isIn(['Active', 'Draft', 'Closed', 'all']),
   query('category').optional().isString(),
   query('type').optional().isIn([...JOB_TYPES, 'all']),

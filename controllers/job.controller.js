@@ -82,14 +82,26 @@ exports.getAdminJob = asyncHandler(async (req, res) => {
 });
 
 exports.createJob = asyncHandler(async (req, res) => {
-  const job = await Job.create({ ...req.body, postedBy: req.user._id });
+  const { title, description, category, type, location, salary, requirements, status } = req.body;
+  const job = await Job.create({
+    title,
+    description,
+    category,
+    type,
+    location,
+    salary,
+    requirements,
+    status,
+    postedBy: req.user._id
+  });
   ApiResponse.created(res, { job }, 'Job created successfully');
 });
 
 exports.updateJob = asyncHandler(async (req, res) => {
+  const { title, description, category, type, location, salary, requirements, status } = req.body;
   const job = await Job.findByIdAndUpdate(
     req.params.id,
-    { $set: req.body },
+    { $set: { title, description, category, type, location, salary, requirements, status } },
     { new: true, runValidators: true }
   );
   if (!job) throw ApiError.notFound('Job not found');

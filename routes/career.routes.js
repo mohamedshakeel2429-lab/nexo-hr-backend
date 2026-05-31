@@ -1,4 +1,5 @@
 const express = require('express');
+const { formLimiter } = require('../middleware/rateLimiter.middleware');
 const { uploadAnyResume, handleMulterError } = require('../middleware/upload.middleware');
 const validate = require('../middleware/validate.middleware');
 const { protect, restrictTo } = require('../middleware/auth.middleware');
@@ -10,6 +11,7 @@ const router = express.Router();
 // Public route - Submit talent profile
 router.post(
   '/submit-profile',
+  formLimiter,
   uploadAnyResume.single('resume'),
   handleMulterError,
   submitProfileValidation,

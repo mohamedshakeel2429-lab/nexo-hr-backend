@@ -34,5 +34,6 @@ router.patch(
   validate,
   applicationController.updateApplicationStatus
 );
+router.delete('/admin/applications/:id', applicationController.deleteApplication);
 
 module.exports = router;

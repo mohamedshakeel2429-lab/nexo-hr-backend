@@ -5,7 +5,7 @@ const FROM = process.env.FROM_EMAIL
   ? `${process.env.FROM_NAME || 'NEXO HR Solutions'} <${process.env.FROM_EMAIL}>`
   : 'NEXO HR Solutions <onboarding@resend.dev>';
 
-const NOTIFY_TO = process.env.NOTIFY_EMAIL || 'nexo.hrsolutions@gmail.com';
+const NOTIFY_TO = process.env.NOTIFY_EMAIL || 'info@nexohrsolutions.com';
 
 const sendMail = async ({ to, subject, html }) => {
   const resend = getResendClient();
@@ -69,7 +69,7 @@ const sendApplicationConfirmation = async ({ name, email, jobTitle }) => {
         <p>Hi <strong>${name}</strong>,</p>
         <p>Thank you for applying for the <strong>${jobTitle}</strong> position. Your application has been successfully received.</p>
         <p>Our recruitment team will review your profile and get back to you within <strong>48 hours</strong>.</p>
-        <p>If you have any questions, feel free to contact us at <a href="mailto:nexo.hrsolutions@gmail.com">nexo.hrsolutions@gmail.com</a>.</p>
+        <p>If you have any questions, feel free to contact us at <a href="mailto:info@nexohrsolutions.com">info@nexohrsolutions.com</a>.</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
         <p style="color:#6b7280;font-size:13px">NEXO HR Solutions · Chennai, India · +91 7200721109</p>
       </div>
@@ -128,7 +128,7 @@ const sendCareerProfileConfirmation = async ({ fullName, email, preferredRole })
         <p>In the meantime, you can:</p>
         <ul style="color:#4b5563;line-height:1.8">
           <li>Keep an eye on our <a href="https://www.nexohrsolutions.com/careers" style="color:#6366f1;text-decoration:none">Careers page</a> for open positions</li>
-          <li>Update your profile by reaching out to us at <a href="mailto:nexo.hrsolutions@gmail.com" style="color:#6366f1;text-decoration:none">nexo.hrsolutions@gmail.com</a></li>
+          <li>Update your profile by reaching out to us at <a href="mailto:info@nexohrsolutions.com" style="color:#6366f1;text-decoration:none">info@nexohrsolutions.com</a></li>
           <li>Follow us on LinkedIn for the latest updates</li>
         </ul>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>

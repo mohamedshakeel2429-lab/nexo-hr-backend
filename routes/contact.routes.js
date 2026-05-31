@@ -20,5 +20,6 @@ router.get('/admin', contactController.listContacts);
 router.get('/admin/stats', contactController.getContactStats);
 router.get('/admin/:id', contactController.getContact);
 router.patch('/admin/:id/status', updateStatusValidation, validate, contactController.updateContactStatus);
+router.delete('/admin/:id', contactController.deleteContact);
 
 module.exports = router;

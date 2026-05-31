@@ -104,7 +104,8 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetUrl = `${process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:3000'}/admin/reset-password?token=${resetToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:3000';
+  const resetUrl = `${frontendUrl}/admin/reset-password?token=${resetToken}`;
 
   try {
     await sendPasswordResetEmail({ email: user.email, name: user.name, resetUrl });

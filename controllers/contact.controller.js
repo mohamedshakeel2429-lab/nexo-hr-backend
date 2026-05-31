@@ -106,3 +106,10 @@ exports.getContactStats = asyncHandler(async (req, res) => {
   const total = statusBreakdown.reduce((acc, s) => acc + s.count, 0);
   ApiResponse.ok(res, { total, totalThisMonth, statusBreakdown, serviceBreakdown });
 });
+
+exports.deleteContact = asyncHandler(async (req, res) => {
+  const contact = await Contact.findByIdAndDelete(req.params.id);
+  if (!contact) throw ApiError.notFound('Contact not found');
+  ApiResponse.ok(res, null, 'Enquiry deleted successfully');
+});
+
