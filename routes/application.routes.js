@@ -27,6 +27,8 @@ router.use('/admin', protect, restrictTo('admin', 'superadmin'));
 
 router.get('/admin/applications', applicationController.listApplications);
 router.get('/admin/applications/stats', applicationController.getApplicationStats);
+// Secure resume download endpoint with JWT authentication (must be before :id route)
+router.get('/admin/applications/:id/resume', applicationController.downloadResume);
 router.get('/admin/applications/:id', applicationController.getApplication);
 router.patch(
   '/admin/applications/:id/status',

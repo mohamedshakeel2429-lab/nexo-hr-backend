@@ -27,6 +27,12 @@ router.get(
   careerController.listProfiles
 );
 
+// Secure resume download endpoint with JWT authentication (must be before :id route)
+router.get(
+  '/profiles/:id/resume',
+  careerController.downloadResume
+);
+
 router.get(
   '/profiles/:id',
   careerController.getProfile

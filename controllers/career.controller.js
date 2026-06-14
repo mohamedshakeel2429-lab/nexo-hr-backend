@@ -1,3 +1,4 @@
+const path = require('path');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
@@ -175,4 +176,112 @@ exports.deleteProfile = asyncHandler(async (req, res) => {
   if (!profile) throw ApiError.notFound('Talent profile not found');
 
   ApiResponse.ok(res, {}, 'Talent profile deleted successfully');
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SECURE RESUME DOWNLOAD - Protected by JWT authentication
+// ═══════════════════════════════════════════════════════════════════
+exports.downloadResume = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user._id;
+
+  // Security: Verify user is admin (already checked by middleware)
+  if (!['admin', 'superadmin'].includes(req.user.role)) {
+    throw ApiError.forbidden('Only admins can download resumes');
+  }
+
+  // Fetch talent profile
+  const profile = await TalentProfile.findById(id);
+  if (!profile) {
+    logger.warn(`Resume download attempt for non-existent talent profile: ${id} by user: ${userId}`);
+    throw ApiError.notFound('Talent profile not found');
+  }
+
+  // Verify resume exists
+  if (!profile.resume?.url && !profile.resume?.publicId) {
+    logger.info(`No resume for talent profile: ${id}`);
+    throw ApiError.notFound('Resume not found for this profile');
+  }
+
+  // Log the access for audit trail
+  logger.info(`Admin ${userId} downloading resume for talent profile ${id} (${profile.fullName})`);
+
+  // Handle Cloudinary storage
+  if (process.env.USE_CLOUDINARY === 'true' && profile.resume?.publicId) {
+    try {
+      const cloudinary = require('cloudinary').v2;
+      const resource = await cloudinary.api.resource(profile.resume.publicId);
+      
+      if (!resource.secure_url) {
+        throw new Error('Invalid Cloudinary resource');
+      }
+
+      // Set headers for inline view
+      res.setHeader('Content-Type', profile.resume.mimetype || 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${profile.resume.originalName || 'resume.pdf'}"`
+      );
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      
+      // Redirect to Cloudinary URL (they handle the file serving)
+      return res.redirect(resource.secure_url);
+    } catch (err) {
+      logger.error(`Cloudinary resume fetch error for ${id}: ${err.message}`);
+      throw ApiError.internalServer('Failed to fetch resume from cloud storage');
+    }
+  }
+
+  // Handle local file storage
+  const fs = require('fs').promises;
+  const fsSync = require('fs');
+  
+  // Security: Prevent directory traversal attacks
+  const filename = path.basename(profile.resume.url);
+  const resumePath = path.join(__dirname, '../uploads/resumes', filename);
+  const uploadDir = path.resolve(path.join(__dirname, '../uploads/resumes'));
+  const resolvedPath = path.resolve(resumePath);
+
+  // Ensure the resolved path is within the uploads directory
+  if (!resolvedPath.startsWith(uploadDir)) {
+    logger.error(`Directory traversal attempt detected for path: ${resolvedPath}`);
+    throw ApiError.forbidden('Invalid resume path');
+  }
+
+  // Verify file exists
+  if (!fsSync.existsSync(resolvedPath)) {
+    logger.warn(`Resume file not found: ${resolvedPath} for talent profile: ${id}`);
+    throw ApiError.notFound('Resume file not found on server');
+  }
+
+  try {
+    // Get file stats
+    const stats = await fs.stat(resolvedPath);
+    
+    // Set headers
+    res.setHeader('Content-Type', profile.resume.mimetype || 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${profile.resume.originalName || 'resume.pdf'}"`
+    );
+    res.setHeader('Content-Length', stats.size);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Stream file to response
+    const fileStream = fsSync.createReadStream(resolvedPath);
+    
+    fileStream.on('error', (err) => {
+      logger.error(`Error streaming resume file ${resolvedPath}: ${err.message}`);
+      if (!res.headersSent) {
+        res.status(500).json(ApiError.internalServer('Error reading file'));
+      }
+    });
+
+    fileStream.pipe(res);
+  } catch (err) {
+    logger.error(`Resume download error for ${id}: ${err.message}`);
+    throw ApiError.internalServer('Failed to download resume');
+  }
 });

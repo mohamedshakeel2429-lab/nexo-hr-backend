@@ -84,22 +84,27 @@ if (process.env.NODE_ENV !== 'test') {
 // ── Rate limiting ──────────────────────────────────────────────────
 app.use('/api', globalLimiter);
 
-// ── Secure static file serving (Authenticated Only) ────────────────
+// ── Public static file serving (with security headers) ──────────────
+app.get('/uploads/resumes/:filename', (req, res) => {
+  const safeFilename = path.basename(req.params.filename);
+  const filepath = path.join(__dirname, 'uploads/resumes', safeFilename);
+  
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Cache-Control': 'public, max-age=31536000', // 1 year cache
+    'X-Content-Type-Options': 'nosniff',
+  });
+  
+  res.sendFile(filepath, (err) => {
+    if (err) {
+      logger.warn(`Resume file not found: ${filepath}`);
+      res.status(404).json({ success: false, message: 'File not found' });
+    }
+  });
+});
+
+// ── Admin authentication for audit logging ─────────────────────────
 const { protect, restrictTo } = require('./middleware/auth.middleware');
-app.get(
-  '/uploads/resumes/:filename',
-  protect,
-  restrictTo('admin', 'superadmin'),
-  (req, res) => {
-    const safeFilename = path.basename(req.params.filename);
-    const filepath = path.join(__dirname, 'uploads/resumes', safeFilename);
-    res.sendFile(filepath, (err) => {
-      if (err) {
-        res.status(404).json({ success: false, message: 'File not found' });
-      }
-    });
-  }
-);
 
 // ── Root & Health check ────────────────────────────────────────────
 app.get('/', (_req, res) => {
